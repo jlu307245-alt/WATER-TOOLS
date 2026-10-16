@@ -130,9 +130,16 @@ enum QzxySigner {
         return QzxyCrypto.md5Hex(inner + outerKey)
     }
 
-    /// 按 key 字典序升序拼 key1value1key2value2…（value 为 nil 时整个字段跳过）
+    /// 按 key 字典序升序拼 key1value1key2value2…
+    /// ⚠️ value 为 nil 时【整个字段跳过】（与 Android 端 KlcxkjSigner.rawOf 一致）。
+    ///
+    /// 注意 `params[k]` 的类型是 `String??`（字典的下标本身可选，值又是可选），
+    /// 所以要 `?? nil` 解一层，再用 compactMap 丢掉 nil 项。
     static func rawOf(_ params: [String: String?]) -> String {
-        params.keys.sorted().map { k in k + (params[k] ?? "") }.joined()
+        params.keys.sorted().compactMap { k -> String? in
+            guard let v = params[k] ?? nil else { return nil }
+            return k + v
+        }.joined()
     }
 
     static func signRateOrder(loginCode: String, telephone: String,
