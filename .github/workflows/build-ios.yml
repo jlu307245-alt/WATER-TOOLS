@@ -7,7 +7,9 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    # macos-15 自带 Xcode 16（支持 objectVersion 77）；
+    # 下面的 sed 再兜一层，把 77 降回 56，兼容任意 Xcode 15+
+    runs-on: macos-15
     timeout-minutes: 30
 
     steps:
@@ -18,24 +20,36 @@ jobs:
         run: |
           echo "=== Xcode ==="
           xcodebuild -version
+          echo "=== 可用 Xcode ==="
+          ls /Applications | grep -i xcode || true
           echo "=== SDK ==="
           xcrun --sdk iphoneos --show-sdk-version
-          echo "=== 文件 ==="
-          ls -la
           echo "=== 源码 ==="
           ls -la QzxyTamper/
 
       - name: 3. 安装 XcodeGen
         run: |
-          brew install xcodegen || brew install xcodegen --force
+          brew install xcodegen
           xcodegen --version
 
       - name: 4. 生成 Xcode 工程
         run: |
           xcodegen generate
-          echo "=== 生成结果 ==="
           ls -la
-          echo "=== 工程里的 scheme ==="
+
+          PBX=QzxyTamper.xcodeproj/project.pbxproj
+          echo "=== 原始 objectVersion ==="
+          grep "objectVersion" $PBX || true
+
+          # 关键：把 Xcode 16 的工程格式(77)降回 Xcode 15 可读的 56
+          sed -i '' 's/objectVersion = 77;/objectVersion = 56;/' $PBX
+          sed -i '' 's/objectVersion = 70;/objectVersion = 56;/' $PBX
+          sed -i '' 's/objectVersion = 63;/objectVersion = 56;/' $PBX
+
+          echo "=== 降级后 ==="
+          grep "objectVersion" $PBX || true
+
+          echo "=== 校验工程可读 ==="
           xcodebuild -list -project QzxyTamper.xcodeproj
 
       - name: 5. 编译（关闭签名）
@@ -58,7 +72,7 @@ jobs:
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
           echo "找到 app: $APP"
           if [ -z "$APP" ]; then
-            echo "!! 没找到 .app，列出目录："
+            echo "!! 没找到 .app"
             find build/Build/Products -maxdepth 3 -type d
             exit 1
           fi
@@ -67,6 +81,7 @@ jobs:
           cp -R "$APP" Payload/
           zip -qr QzxyTamper-unsigned.ipa Payload
           ls -lh QzxyTamper-unsigned.ipa
+          unzip -l QzxyTamper-unsigned.ipa | head -25
 
       - name: 7. 上传 ipa
         uses: actions/upload-artifact@v4
