@@ -1,7 +1,7 @@
-# XcodeGen 工程描述 —— 用于在云端（GitHub Actions 的 macOS runner）生成 .xcodeproj
+# XcodeGen 工程描述
 #
-# 本地/云端先生成工程再编译：
-#   brew install xcodegen && xcodegen generate
+# ⚠️ 注意：不要同时写 settings.INFOPLIST_FILE 和 info:，
+#     XcodeGen 会自己管理 Info.plist 路径，手动指定会冲突。
 #
 name: QzxyTamper
 
@@ -11,12 +11,12 @@ options:
     iOS: "16.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  generateEmptyDirectories: false
 
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
-    CODE_SIGN_STYLE: Manual
+    # 关闭签名（云端编译产出未签名 ipa，交给 Sideloadly 签）
     CODE_SIGNING_REQUIRED: "NO"
     CODE_SIGNING_ALLOWED: "NO"
     CODE_SIGN_IDENTITY: ""
@@ -26,25 +26,29 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "16.0"
+
     sources:
       - path: QzxyTamper
         includes:
           - "*.swift"
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sys.qzxytamper
         PRODUCT_NAME: QzxyTamper
-        INFOPLIST_FILE: QzxyTamper/Info.plist
-        TARGETED_DEVICE_FAMILY: "1"          # 仅 iPhone
+        TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: "NO"
-        ENABLE_BITCODE: "NO"
-        SWIFT_OPTIMIZATION_LEVEL: "-Onone"   # 关优化，减少编译期问题
+        # 注意：这里【不要】写 INFOPLIST_FILE，由下面的 info: 自动管
+
     info:
       path: QzxyTamper/Info.plist
       properties:
         CFBundleDisplayName: 水表工具
+        CFBundleName: QzxyTamper
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
+        CFBundlePackageType: APPL
+        LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

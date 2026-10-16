@@ -1,12 +1,5 @@
 name: Build iOS IPA (no Mac needed)
 
-# 云端用 GitHub 的免费 macOS runner 编译，产出未签名 .ipa
-# 下载后可用 Sideloadly / AltStore 在 Windows 上签名安装
-#
-# 触发方式：
-#   - 手动点 “Run workflow”
-#   - 或 push 到 main 分支
-
 on:
   workflow_dispatch:
   push:
@@ -14,23 +7,36 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14      # 免费 runner（Apple Silicon）
+    runs-on: macos-14
     timeout-minutes: 30
 
     steps:
       - name: 1. 拉取代码
         uses: actions/checkout@v4
 
-      - name: 2. 查看环境
+      - name: 2. 环境信息
         run: |
+          echo "=== Xcode ==="
           xcodebuild -version
+          echo "=== SDK ==="
           xcrun --sdk iphoneos --show-sdk-version
+          echo "=== 文件 ==="
+          ls -la
+          echo "=== 源码 ==="
+          ls -la QzxyTamper/
 
       - name: 3. 安装 XcodeGen
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen || brew install xcodegen --force
+          xcodegen --version
 
       - name: 4. 生成 Xcode 工程
-        run: xcodegen generate
+        run: |
+          xcodegen generate
+          echo "=== 生成结果 ==="
+          ls -la
+          echo "=== 工程里的 scheme ==="
+          xcodebuild -list -project QzxyTamper.xcodeproj
 
       - name: 5. 编译（关闭签名）
         run: |
@@ -45,20 +51,24 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGN_ENTITLEMENTS="" \
-            build 2>&1 | tail -60
+            build
 
-      - name: 6. 打包成 .ipa
+      - name: 6. 打包成 ipa
         run: |
-          APP_PATH=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
-          echo "APP: $APP_PATH"
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "找到 app: $APP"
+          if [ -z "$APP" ]; then
+            echo "!! 没找到 .app，列出目录："
+            find build/Build/Products -maxdepth 3 -type d
+            exit 1
+          fi
           rm -rf Payload
           mkdir -p Payload
-          cp -R "$APP_PATH" Payload/
+          cp -R "$APP" Payload/
           zip -qr QzxyTamper-unsigned.ipa Payload
           ls -lh QzxyTamper-unsigned.ipa
-          unzip -l QzxyTamper-unsigned.ipa | head -20
 
-      - name: 7. 上传 ipa 制品
+      - name: 7. 上传 ipa
         uses: actions/upload-artifact@v4
         with:
           name: QzxyTamper-ipa
