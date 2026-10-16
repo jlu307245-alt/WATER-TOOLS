@@ -47,17 +47,22 @@ enum QzxyCrypto {
         defer { CCCryptorRelease(c) }
 
         var out = Data(count: cipher.count + kCCBlockSizeAES128)
+        // ⚠️ 容量必须先取到局部变量：在 withUnsafeMutableBytes 闭包内读 out.count
+        //    会与 outPtr 对 out 的可变借用重叠，触发 Swift 独占访问检查
+        //    （error: overlapping accesses to 'out'）。
+        let outCapacity = out.count
         var moved = 0
         let status: CCCryptorStatus = out.withUnsafeMutableBytes { outPtr in
             cipher.withUnsafeBytes { inPtr in
                 CCCryptorUpdate(c,
                                 inPtr.baseAddress, cipher.count,
-                                outPtr.baseAddress, out.count,
+                                outPtr.baseAddress, outCapacity,
                                 &moved)
             }
         }
         guard status == kCCSuccess else { return nil }
-        out.removeSubrange(moved..<out.count)
+        let outEnd = out.count          // 同理，先取出来再切
+        if moved < outEnd { out.removeSubrange(moved..<outEnd) }
         return out
     }
 
