@@ -49,7 +49,6 @@ enum BleConnectionState: Equatable {
 
 // MARK: - 主控制器
 
-@MainActor
 final class KlcxkjBleCentral: NSObject, ObservableObject {
 
     // GATT（水表固定 UUID）
@@ -238,13 +237,13 @@ final class KlcxkjBleCentral: NSObject, ObservableObject {
 
 extension KlcxkjBleCentral: CBCentralManagerDelegate {
 
-    nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
         Task { @MainActor in
             append("蓝牙状态：\(stateText(central.state))")
         }
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager,
+    func centralManager(_ central: CBCentralManager,
                                     didDiscover peripheral: CBPeripheral,
                                     advertisementData: [String: Any],
                                     rssi RSSI: NSNumber) {
@@ -271,14 +270,14 @@ extension KlcxkjBleCentral: CBCentralManagerDelegate {
         }
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         Task { @MainActor in
             append("已连接，发现服务…")
             peripheral.discoverServices([KlcxkjBleCentral.serviceUUID])
         }
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager,
+    func centralManager(_ central: CBCentralManager,
                                     didFailToConnect peripheral: CBPeripheral, error: Error?) {
         Task { @MainActor in
             append("连接失败：\(error?.localizedDescription ?? "未知")")
@@ -288,7 +287,7 @@ extension KlcxkjBleCentral: CBCentralManagerDelegate {
         }
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager,
+    func centralManager(_ central: CBCentralManager,
                                     didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         Task { @MainActor in
             append("已断开\(error.map { "（\($0.localizedDescription)）" } ?? "")")
@@ -301,7 +300,7 @@ extension KlcxkjBleCentral: CBCentralManagerDelegate {
 
 extension KlcxkjBleCentral: CBPeripheralDelegate {
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let svcs = peripheral.services else { return }
         for s in svcs where s.uuid == KlcxkjBleCentral.serviceUUID {
             peripheral.discoverCharacteristics(
@@ -316,7 +315,7 @@ extension KlcxkjBleCentral: CBPeripheralDelegate {
         }
     }
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral,
+    func peripheral(_ peripheral: CBPeripheral,
                                 didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         guard let chars = service.characteristics else { return }
         for c in chars {
@@ -335,7 +334,7 @@ extension KlcxkjBleCentral: CBPeripheralDelegate {
         }
     }
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral,
+    func peripheral(_ peripheral: CBPeripheral,
                                 didUpdateNotificationStateFor characteristic: CBCharacteristic,
                                 error: Error?) {
         Task { @MainActor in
@@ -354,7 +353,7 @@ extension KlcxkjBleCentral: CBPeripheralDelegate {
         }
     }
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral,
+    func peripheral(_ peripheral: CBPeripheral,
                                 didUpdateValueFor characteristic: CBCharacteristic,
                                 error: Error?) {
         guard characteristic.uuid == KlcxkjBleCentral.notifyUUID,
