@@ -294,7 +294,7 @@ struct TamperView: View {
         do {
             guard let data = try await QzxyApi.rateOrder(
                 acc: acc, deviceId: deviceId, mac: mac,
-                macType: QzxySigner.macType(st.devType, st.a1),
+                macType: QzxySigner.macType(Int(st.devType), Int(st.a1)),
                 bigTypeId: bigTypeId, smallTypeId: smallTypeId,
                 protocolType: st.protocolType, randomNumber: st.randomNumber
             ) else { say("✗ 取费率包失败"); return }
@@ -343,7 +343,7 @@ struct TamperView: View {
         do {
             guard let data = try await QzxyApi.rateOrder(
                 acc: acc, deviceId: deviceId, mac: mac,
-                macType: QzxySigner.macType(st.devType, st.a1),
+                macType: QzxySigner.macType(Int(st.devType), Int(st.a1)),
                 bigTypeId: bigTypeId, smallTypeId: smallTypeId,
                 protocolType: st.protocolType, randomNumber: st.randomNumber
             ), let down = data["downData"] as? String, !down.isEmpty else {
