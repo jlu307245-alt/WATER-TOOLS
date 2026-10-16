@@ -8,6 +8,7 @@
 //  界面刻意保持精简：四个区块，从上到下走一遍即可。
 //
 import SwiftUI
+import UIKit
 
 @main
 struct QzxyTamperApp: App {
