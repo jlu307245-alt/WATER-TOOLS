@@ -1,0 +1,52 @@
+# XcodeGen 工程描述 —— 用于在云端（GitHub Actions 的 macOS runner）生成 .xcodeproj
+#
+# 本地/云端先生成工程再编译：
+#   brew install xcodegen && xcodegen generate
+#
+name: QzxyTamper
+
+options:
+  bundleIdPrefix: com.sys
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGN_IDENTITY: ""
+
+targets:
+  QzxyTamper:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: QzxyTamper
+        includes:
+          - "*.swift"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sys.qzxytamper
+        PRODUCT_NAME: QzxyTamper
+        INFOPLIST_FILE: QzxyTamper/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"          # 仅 iPhone
+        SUPPORTS_MACCATALYST: "NO"
+        ENABLE_BITCODE: "NO"
+        SWIFT_OPTIMIZATION_LEVEL: "-Onone"   # 关优化，减少编译期问题
+    info:
+      path: QzxyTamper/Info.plist
+      properties:
+        CFBundleDisplayName: 水表工具
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSBluetoothAlwaysUsageDescription: 需要蓝牙以连接附近的水控设备
+        NSBluetoothPeripheralUsageDescription: 需要蓝牙以连接附近的水控设备

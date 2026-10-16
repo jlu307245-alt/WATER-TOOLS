@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ═══════════════════════════════════════════════════════════
+         Info.plist 关键项
+         把下面这些键合并进你的 Xcode 工程 Info.plist（或 Target > Info 页）
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- ★ 必需：蓝牙权限说明（iOS 13+）。不填会在首次扫描时崩溃 -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>需要蓝牙以连接附近的水控设备</string>
+
+    <!-- iOS 12 及以下的旧键，一并加上无害 -->
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>需要蓝牙以连接附近的水控设备</string>
+
+    <!-- 后台蓝牙（可选：如果要在锁屏后继续操作，需在 Signing & Capabilities
+         里勾选 Background Modes → Uses Bluetooth LE accessories） -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+    </array>
+
+    <!-- 本 App 全部走 HTTPS（v3-api.china-qzxy.cn），无需放开 ATS -->
+    <!-- 如果后续要用明文 HTTP 调试，才需要下面这段 -->
+    <!--
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+    -->
+
+    <!-- ── 以下是标准项，Xcode 新建工程时已自带，保持原值即可 ── -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_CN</string>
+    <key>CFBundleDisplayName</key>
+    <string>水表作业</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+</dict>
+</plist>
