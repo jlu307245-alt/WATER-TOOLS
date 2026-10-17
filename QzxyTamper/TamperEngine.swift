@@ -170,6 +170,10 @@ enum XfDataTamper {
     static var maxYuan    = 0.50
     static var randomize  = true
 
+    /// 本次改写时被归零的标志位原值（"01"/"06"/"0b"…）；nil 表示本来就是 00
+    /// 用于界面提示"检测到补结算帧，已强制单笔"
+    static var lastFlagReset: String? = nil
+
     /// 取本次目标金额（元）
     static func pickTarget() -> Double {
         if useFixed { return fixedYuan }
@@ -182,10 +186,17 @@ enum XfDataTamper {
     /// 状态描述（显示在界面上）
     static func describe() -> String {
         guard enabled else { return "关闭（按真实用量记账）" }
-        if useFixed { return "控额 固定 ¥" + String(format: "%.2f", fixedYuan) }
-        return "控额 ¥" + String(format: "%.2f", minYuan)
-            + "~¥" + String(format: "%.2f", maxYuan)
-            + (randomize ? " 随机" : "")
+        let base: String
+        if useFixed { base = "控额 固定 ¥" + String(format: "%.2f", fixedYuan) }
+        else {
+            base = "控额 ¥" + String(format: "%.2f", minYuan)
+                + "~¥" + String(format: "%.2f", maxYuan)
+                + (randomize ? " 随机" : "")
+        }
+        if let f = lastFlagReset {
+            return base + "（上笔强制单笔：标志位 " + f + "→00）"
+        }
+        return base
     }
 
     /// 从帧里读出「金额」（元）；字段未命中返回 nil
@@ -227,6 +238,28 @@ enum XfDataTamper {
             chars[p]     = hx[src]
             chars[p + 1] = hx[hx.index(after: src)]
         }
+
+        // ── 【同步 Android 2026-10-17】偏移 30 = 累计/补结算标志位 ──
+        //
+        // 真机实测（C47F0E2698C8，Android 端 14 笔样本）：
+        //   偏移30=00 → 服务端按本帧 31-34 记账   → 上传 50 厘，实扣 0.05 ✓
+        //   偏移30=01 → 服务端绕过 31-34 自算     → 上传 50 厘，实扣 0.306 ✗
+        //               （服务端读的是偏移 30-31 的大端 2 字节：0x0132 = 306）
+        //   偏移30=06 → 服务端读 0x0664 = 1636（实扣 1596）
+        //
+        // 其余字节（26-29 / 35 / MAC）四笔完全一致，差异只在这一个字节。
+        // 归零后服务端只走单笔结算路径，金额以 31-34 为准。
+        lastFlagReset = nil
+        let flagIdx = usageStart - 1
+        if flagIdx >= 0, flagIdx * 2 + 1 < chars.count {
+            let cur = "\(chars[flagIdx * 2])\(chars[flagIdx * 2 + 1])"
+            if cur != "00" {
+                chars[flagIdx * 2]     = "0"
+                chars[flagIdx * 2 + 1] = "0"
+                lastFlagReset = cur
+            }
+        }
+
         return (String(chars), want)
     }
 
