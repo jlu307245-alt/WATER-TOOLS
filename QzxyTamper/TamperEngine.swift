@@ -12,8 +12,12 @@ struct QzxyAccount {
     let loginCode: String
     let userId: String
     let phone: String
+    /// 来自登录响应 data.userAccount.accountId（对齐 LinYu AuthRepository.kt:25）
     var accountId: String = "14204"
+    /// 同上，来自 data.userAccount.projectId
     var projectId: String = "506"
+    /// true = 从登录响应真实解析；false = 用的默认值
+    var resolvedFromLogin: Bool = false
 
     var authFields: [String: String] {
         ["loginCode": loginCode, "userId": userId, "accountId": accountId,
@@ -73,7 +77,28 @@ enum QzxyApi {
         if let n = d["userId"] as? Int { uid = String(n) }
         else if let s = d["userId"] as? String { uid = s }
         else { return nil }
-        return QzxyAccount(loginCode: lc, userId: uid, phone: phone)
+        // ── 解析 accountId / projectId（对齐 LinYu AuthRepository.kt:25）──
+        // 响应结构: data.userAccount.accountId / data.userAccount.projectId
+        // 这两个值每个请求都要带；写死会在其他账号上失败。
+        var aid = "14204"
+        var pid = "506"
+        var resolved = false
+        if let ua = d["userAccount"] as? [String: Any] {
+            if let n = ua["accountId"] as? Int { aid = String(n); resolved = true }
+            else if let s = ua["accountId"] as? String, !s.isEmpty { aid = s; resolved = true }
+            if let n = ua["projectId"] as? Int { pid = String(n) }
+            else if let s = ua["projectId"] as? String, !s.isEmpty { pid = s }
+        }
+        // 部分部署把 accountId 直接放 data 顶层
+        if !resolved {
+            if let n = d["accountId"] as? Int { aid = String(n); resolved = true }
+            else if let s = d["accountId"] as? String, !s.isEmpty { aid = s; resolved = true }
+            if let n = d["projectId"] as? Int { pid = String(n) }
+            else if let s = d["projectId"] as? String, !s.isEmpty { pid = s }
+        }
+
+        return QzxyAccount(loginCode: lc, userId: uid, phone: phone,
+                           accountId: aid, projectId: pid, resolvedFromLogin: resolved)
     }
 
     /// 取费率包（服务端不校验 randomNumber 真伪）
