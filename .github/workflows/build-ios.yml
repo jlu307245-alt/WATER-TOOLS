@@ -5,6 +5,10 @@ on:
   push:
     branches: [ main, master ]
 
+# Release 发布需要写权限（用 Actions 自带的 GITHUB_TOKEN，无需手动配 token）
+permissions:
+  contents: write
+
 jobs:
   build:
     # macos-15 自带 Xcode 16（支持 objectVersion 77）；
@@ -88,4 +92,23 @@ jobs:
         with:
           name: QzxyTamper-ipa
           path: QzxyTamper-unsigned.ipa
-          retention-days: 30
+          retention-days: 7
+
+      # ── 发布到 Release：提供 ipa 直链，免登录/免解压 ──
+      # 固定 tag ios-latest，每次覆盖同名资产，直链永不变：
+      #   https://github.com/jlu307245-alt/WATER-TOOLS/releases/download/ios-latest/QzxyTamper-unsigned.ipa
+      - name: 8. 发布到 Release（直链下载）
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          name: iOS 最新构建（直链下载）
+          body: |
+            **点下面的 QzxyTamper-unsigned.ipa 直接下载**（不用登录、不用解压）
+
+            - 提交: `${{ github.sha }}`
+            - 时间: ${{ github.event.head_commit.timestamp }}
+            - 修复: 偏移30 标志位归零 / accountId 动态解析
+
+            安装：Sideloadly 选这个 ipa → 填 Apple ID → Start → 手机信任证书
+          files: QzxyTamper-unsigned.ipa
+          overwrite_files: true
